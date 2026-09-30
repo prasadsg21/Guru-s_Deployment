@@ -34,7 +34,7 @@ jobs:
 
 
   # =========================
-  # 2. BUILD & PUSH
+  # 2. BUILD & PUSH DOCKER IMAGE
   # =========================
   build-and-push:
     name: Build and Push Docker Image
@@ -53,15 +53,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker Image
-        run: |
-          docker build \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/vspire-website:latest .
-
-      - name: Push Docker Image
-        run: |
-          docker push \
-            ${{ secrets.DOCKERHUB_USERNAME }}/vspire-website:latest
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/vspire-website:latest
 
 
   # =========================
@@ -84,25 +82,35 @@ jobs:
 
           script: |
 
+            echo "================================"
             echo "Pulling latest Docker image..."
+            echo "================================"
 
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/vspire-website:latest
 
+            echo "================================"
             echo "Stopping old container..."
+            echo "================================"
 
             docker stop vspire-website || true
 
+            echo "================================"
             echo "Removing old container..."
+            echo "================================"
 
             docker rm vspire-website || true
 
+            echo "================================"
             echo "Starting new container..."
+            echo "================================"
 
             docker run -d \
               --name vspire-website \
               -p 80:8000 \
               ${{ secrets.DOCKERHUB_USERNAME }}/vspire-website:latest
 
+            echo "================================"
             echo "Deployment completed!"
+            echo "================================"
 
             docker ps
